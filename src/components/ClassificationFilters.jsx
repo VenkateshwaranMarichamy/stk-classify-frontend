@@ -3,7 +3,8 @@ import axios from "axios";
 import {
   fetchBasicIndustries,
   fetchClassificationData,
-  fetchStocksByBasicCode
+  fetchStocksByBasicCode,
+  updateStockClassification
 } from "../services/classificationService";
 import styles from "./ClassificationFilters.module.css";
 import ClassificationDropdowns from "./ClassificationDropdowns";
@@ -38,10 +39,13 @@ export default function ClassificationFilters({ onSelectionChange }) {
   const [stocksError, setStocksError] = useState(null);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editCompanyId, setEditCompanyId] = useState(null);
   const [editCompany, setEditCompany] = useState("");
   const [editMarketCap, setEditMarketCap] = useState("");
   const [editBasicCode, setEditBasicCode] = useState("");
   const [editBasicName, setEditBasicName] = useState("");
+  const [updateStatus, setUpdateStatus] = useState("idle"); // idle | loading | success | error
+  const [updateError, setUpdateError] = useState("");
 
   useEffect(() => {
     if (hasFetchedRef.current) return;
@@ -215,7 +219,22 @@ export default function ClassificationFilters({ onSelectionChange }) {
     }
   }
 
+  async function refreshStocksInBackground() {
+    if (!basicCode) return;
+    try {
+      const response = await fetchStocksByBasicCode(basicCode);
+      const list = Array.isArray(response?.data) ? response.data : [];
+      setStocks(list);
+      setStocksCount(typeof response?.count === "number" ? response.count : list.length);
+      setStocksStatus("success");
+    } catch {
+      // Keep current UI state; background refresh failures should not disrupt editing flow.
+    }
+  }
+
   function openEditModal(row) {
+    const companyId = Number(row?.company_id);
+    setEditCompanyId(Number.isFinite(companyId) && companyId > 0 ? companyId : null);
     setEditCompany(row?.company_name || "");
     const normalized = normalizeMarketCap(row?.market_cap_category);
     setEditMarketCap(MARKET_CAP_OPTIONS.includes(normalized) ? normalized : "");
@@ -235,17 +254,87 @@ export default function ClassificationFilters({ onSelectionChange }) {
       "";
     setEditBasicCode(currentCode);
     setEditBasicName(currentName);
+    setUpdateStatus("idle");
+    setUpdateError("");
     setIsEditOpen(true);
     loadBasicsIfNeeded();
   }
 
   function closeEditModal() {
+    setUpdateStatus("idle");
+    setUpdateError("");
     setIsEditOpen(false);
   }
 
-  function handleUpdate() {
-    // TODO: wire to backend update endpoint when available.
-    closeEditModal();
+  async function handleUpdate() {
+    if (!editCompanyId) {
+      setUpdateStatus("error");
+      setUpdateError("Missing company id for this row.");
+      return;
+    }
+    if (!editCompany?.trim()) {
+      setUpdateStatus("error");
+      setUpdateError("Company name is required.");
+      return;
+    }
+    if (!editMarketCap) {
+      setUpdateStatus("error");
+      setUpdateError("Market cap is required.");
+      return;
+    }
+    if (!editBasicCode) {
+      setUpdateStatus("error");
+      setUpdateError("Basic industry is required.");
+      return;
+    }
+
+    setUpdateStatus("loading");
+    setUpdateError("");
+    try {
+      const response = await updateStockClassification(editCompanyId, {
+        company_name: editCompany.trim(),
+        basic_ind_code: editBasicCode,
+        market_cap_category: editMarketCap
+      });
+
+      const updatedBasicCode = response?.basic_ind_code ?? editBasicCode;
+      const updatedCompanyName = response?.company_name ?? editCompany.trim();
+      const updatedMarketCap = response?.market_cap_category ?? editMarketCap;
+
+      setStocks((prev) => {
+        const nextRows = prev
+          .map((row) =>
+            row?.company_id === editCompanyId
+              ? {
+                  ...row,
+                  company_name: updatedCompanyName,
+                  market_cap_category: updatedMarketCap
+                }
+              : row
+          )
+          .filter((row) => {
+            if (row?.company_id !== editCompanyId) return true;
+            return updatedBasicCode === basicCode;
+          });
+
+        setStocksCount(nextRows.length);
+        return nextRows;
+      });
+
+      setUpdateStatus("success");
+      closeEditModal();
+      refreshStocksInBackground();
+    } catch (err) {
+      setUpdateStatus("error");
+      if (err?.response?.data?.detail) {
+        const detail = Array.isArray(err.response.data.detail)
+          ? err.response.data.detail.map((d) => d?.msg).filter(Boolean).join(", ")
+          : err.response.data.detail;
+        setUpdateError(detail || "Update failed.");
+      } else {
+        setUpdateError(err?.message || "Update failed.");
+      }
+    }
   }
 
   const isLoading = status === "loading";
@@ -305,6 +394,8 @@ export default function ClassificationFilters({ onSelectionChange }) {
         basicIndustryStatus={basicIndustryStatus}
         basicIndustryErrorMessage={basicIndustryErrorMessage}
         modalBasicOptions={modalBasicOptionsWithCurrent}
+        updateStatus={updateStatus}
+        updateError={updateError}
         onCompanyChange={setEditCompany}
         onMarketCapChange={setEditMarketCap}
         onBasicCodeChange={setEditBasicCode}

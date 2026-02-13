@@ -10,6 +10,8 @@ export default function EditStockModal({
   basicIndustryStatus,
   basicIndustryErrorMessage,
   modalBasicOptions,
+  updateStatus,
+  updateError,
   onCompanyChange,
   onMarketCapChange,
   onBasicCodeChange,
@@ -79,12 +81,18 @@ export default function EditStockModal({
                 ))}
             </select>
           </label>
+          {updateError && (
+            <div className={`${styles.status} ${styles.error}`} role="alert">
+              {updateError}
+            </div>
+          )}
         </div>
         <div className={styles.modalActions}>
           <button
             type="button"
             className={styles.secondaryButton}
             onClick={onClose}
+            disabled={updateStatus === "loading"}
           >
             Cancel
           </button>
@@ -92,8 +100,9 @@ export default function EditStockModal({
             type="button"
             className={styles.button}
             onClick={onUpdate}
+            disabled={updateStatus === "loading"}
           >
-            Update
+            {updateStatus === "loading" ? "Updating..." : "Update"}
           </button>
         </div>
       </div>
