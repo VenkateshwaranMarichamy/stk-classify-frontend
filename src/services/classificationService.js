@@ -21,3 +21,8 @@ export async function fetchBasicIndustries(signal) {
   const response = await axios.get(BASIC_INDUSTRIES_URL, { signal });
   return response.data;
 }
+
+export async function updateStockClassification(companyId, payload, signal) {
+  const response = await axios.put(`${STOCKS_URL}/${companyId}`, payload, { signal });
+  return response.data;
+}
