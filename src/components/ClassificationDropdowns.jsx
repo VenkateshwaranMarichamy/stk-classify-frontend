@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "./ClassificationFilters.module.css";
+import { Button, Col, Form, Row, Select } from "antd";
 
 export default function ClassificationDropdowns({
   macro,
@@ -21,84 +21,64 @@ export default function ClassificationDropdowns({
 }) {
   return (
     <>
-      <label className={styles.field}>
-        <span className={styles.label}>Macro Sector</span>
-        <select
-          className={styles.select}
-          value={macro}
-          onChange={(e) => onMacroChange(e.target.value)}
-          disabled={isLoading || isError}
-        >
-          <option value="">Select macro sector</option>
-          {macroOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Row gutter={[12, 12]}>
+        <Col xs={24} sm={12} md={12} lg={6}>
+          <Form.Item label="Macro Sector" style={{ marginBottom: 0 }}>
+            <Select
+              value={macro || undefined}
+              onChange={(value) => onMacroChange(value || "")}
+              placeholder="Select macro sector"
+              disabled={isLoading || isError}
+              options={macroOptions.map((opt) => ({ label: opt, value: opt }))}
+            />
+          </Form.Item>
+        </Col>
 
-      <label className={styles.field}>
-        <span className={styles.label}>Sector</span>
-        <select
-          className={styles.select}
-          value={sector}
-          onChange={(e) => onSectorChange(e.target.value)}
-          disabled={!macro || isLoading || isError}
-        >
-          <option value="">Select sector</option>
-          {sectorOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      </label>
+        <Col xs={24} sm={12} md={12} lg={6}>
+          <Form.Item label="Sector" style={{ marginBottom: 0 }}>
+            <Select
+              value={sector || undefined}
+              onChange={(value) => onSectorChange(value || "")}
+              placeholder="Select sector"
+              disabled={!macro || isLoading || isError}
+              options={sectorOptions.map((opt) => ({ label: opt, value: opt }))}
+            />
+          </Form.Item>
+        </Col>
 
-      <label className={styles.field}>
-        <span className={styles.label}>Industry</span>
-        <select
-          className={styles.select}
-          value={industry}
-          onChange={(e) => onIndustryChange(e.target.value)}
-          disabled={!macro || !sector || isLoading || isError}
-        >
-          <option value="">Select industry</option>
-          {industryOptions.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      </label>
+        <Col xs={24} sm={12} md={12} lg={6}>
+          <Form.Item label="Industry" style={{ marginBottom: 0 }}>
+            <Select
+              value={industry || undefined}
+              onChange={(value) => onIndustryChange(value || "")}
+              placeholder="Select industry"
+              disabled={!macro || !sector || isLoading || isError}
+              options={industryOptions.map((opt) => ({ label: opt, value: opt }))}
+            />
+          </Form.Item>
+        </Col>
 
-      <label className={styles.field}>
-        <span className={styles.label}>Basic Industry</span>
-        <select
-          className={styles.select}
-          value={basicCode}
-          onChange={(e) => onBasicChange(e.target.value)}
-          disabled={!macro || !sector || !industry || isLoading || isError}
-        >
-          <option value="">Select basic industry</option>
-          {basicOptions.map((opt) => (
-            <option key={opt.code} value={opt.code}>
-              {opt.name}
-            </option>
-          ))}
-        </select>
-      </label>
+        <Col xs={24} sm={12} md={12} lg={6}>
+          <Form.Item label="Basic Industry" style={{ marginBottom: 0 }}>
+            <Select
+              value={basicCode || undefined}
+              onChange={(value) => onBasicChange(value || "")}
+              placeholder="Select basic industry"
+              disabled={!macro || !sector || !industry || isLoading || isError}
+              options={basicOptions.map((opt) => ({ label: opt.name, value: opt.code }))}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
 
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.button}
-          onClick={onSearch}
-          disabled={!basicCode || stocksStatus === "loading"}
-        >
-          {stocksStatus === "loading" ? "Searching..." : "Search"}
-        </button>
-      </div>
+      <Button
+        type="primary"
+        onClick={onSearch}
+        disabled={!basicCode || stocksStatus === "loading"}
+        loading={stocksStatus === "loading"}
+      >
+        Search
+      </Button>
     </>
   );
 }

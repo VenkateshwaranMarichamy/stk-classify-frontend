@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "./ClassificationFilters.module.css";
+import { Alert, Button, Form, Input, Modal, Select, Space } from "antd";
 
 export default function EditStockModal({
   isOpen,
@@ -18,94 +18,56 @@ export default function EditStockModal({
   onClose,
   onUpdate
 }) {
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.modalBackdrop} role="dialog" aria-modal="true">
-      <div className={styles.modal}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>Edit Stock</h2>
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={onClose}
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
-        <div className={styles.modalBody}>
-          <label className={styles.modalField}>
-            <span className={styles.label}>Company</span>
-            <input
-              className={styles.input}
-              value={editCompany}
-              onChange={(e) => onCompanyChange(e.target.value)}
-            />
-          </label>
-          <label className={styles.modalField}>
-            <span className={styles.label}>Market Cap</span>
-            <select
-              className={styles.select}
-              value={editMarketCap}
-              onChange={(e) => onMarketCapChange(e.target.value)}
-            >
-              <option value="">Select market cap</option>
-              {marketCapOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.modalField}>
-            <span className={styles.label}>Basic Industry</span>
-            <select
-              className={styles.select}
-              value={editBasicCode}
-              onChange={(e) => onBasicCodeChange(e.target.value)}
-              disabled={basicIndustryStatus === "loading" || basicIndustryStatus === "error"}
-            >
-              <option value="">Select basic industry</option>
-              {basicIndustryStatus === "loading" && (
-                <option value="">Loading...</option>
-              )}
-              {basicIndustryStatus === "error" && (
-                <option value="">{basicIndustryErrorMessage}</option>
-              )}
-              {basicIndustryStatus === "success" &&
-                modalBasicOptions.map((opt) => (
-                  <option key={opt.code} value={opt.code}>
-                    {opt.name}
-                  </option>
-                ))}
-            </select>
-          </label>
-          {updateError && (
-            <div className={`${styles.status} ${styles.error}`} role="alert">
-              {updateError}
-            </div>
-          )}
-        </div>
-        <div className={styles.modalActions}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={onClose}
-            disabled={updateStatus === "loading"}
-          >
+    <Modal
+      title="Edit Stock"
+      open={isOpen}
+      onCancel={onClose}
+      destroyOnClose
+      footer={
+        <Space>
+          <Button onClick={onClose} disabled={updateStatus === "loading"}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className={styles.button}
-            onClick={onUpdate}
-            disabled={updateStatus === "loading"}
-          >
-            {updateStatus === "loading" ? "Updating..." : "Update"}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+          <Button type="primary" onClick={onUpdate} loading={updateStatus === "loading"}>
+            Update
+          </Button>
+        </Space>
+      }
+    >
+      <Form layout="vertical">
+        <Form.Item label="Company">
+          <Input value={editCompany} onChange={(e) => onCompanyChange(e.target.value)} />
+        </Form.Item>
+
+        <Form.Item label="Market Cap">
+          <Select
+            value={editMarketCap || undefined}
+            onChange={(value) => onMarketCapChange(value || "")}
+            placeholder="Select market cap"
+            options={marketCapOptions.map((option) => ({ label: option, value: option }))}
+          />
+        </Form.Item>
+
+        <Form.Item label="Basic Industry">
+          <Select
+            value={editBasicCode || undefined}
+            onChange={(value) => onBasicCodeChange(value || "")}
+            placeholder="Select basic industry"
+            loading={basicIndustryStatus === "loading"}
+            disabled={basicIndustryStatus === "error"}
+            options={modalBasicOptions.map((opt) => ({ label: opt.name, value: opt.code }))}
+          />
+        </Form.Item>
+
+        {basicIndustryStatus === "error" && (
+          <Alert message={basicIndustryErrorMessage} type="error" showIcon style={{ marginBottom: 12 }} />
+        )}
+
+        {updateError && (
+          <Alert message={updateError} type="error" showIcon />
+        )}
+      </Form>
+    </Modal>
   );
 }

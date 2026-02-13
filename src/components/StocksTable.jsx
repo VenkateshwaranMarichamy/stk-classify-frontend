@@ -1,44 +1,48 @@
 import React from "react";
-import styles from "./ClassificationFilters.module.css";
+import { Button, Card, Empty, Table } from "antd";
 
 export default function StocksTable({ stocks, stocksCount, onEdit }) {
+  const columns = [
+    {
+      title: "Company",
+      dataIndex: "company_name",
+      key: "company_name"
+    },
+    {
+      title: "Comments",
+      dataIndex: "comments",
+      key: "comments"
+    },
+    {
+      title: "Market Cap",
+      dataIndex: "market_cap_category",
+      key: "market_cap_category",
+      width: 150
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 100,
+      render: (_, row) => (
+        <Button type="link" onClick={() => onEdit(row)} style={{ paddingInline: 0 }}>
+          Edit
+        </Button>
+      )
+    }
+  ];
+
   return (
-    <div className={styles.tableWrap}>
-      <div className={styles.tableTitle}>
-        Results ({stocksCount})
-      </div>
+    <Card title={`Results (${stocksCount})`}>
       {stocks.length === 0 ? (
-        <div className={styles.empty}>No companies found.</div>
+        <Empty description="No companies found." image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Company</th>
-              <th>Comments</th>
-              <th>Market Cap</th>
-              <th className={styles.actionsCol}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stocks.map((row, idx) => (
-              <tr key={`${row.company_name}-${idx}`}>
-                <td>{row.company_name}</td>
-                <td>{row.comments}</td>
-                <td>{row.market_cap_category}</td>
-                <td>
-                  <button
-                    type="button"
-                    className={styles.linkButton}
-                    onClick={() => onEdit(row)}
-                  >
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table
+          dataSource={stocks}
+          columns={columns}
+          rowKey={(row) => row?.company_id ?? `${row.company_name}-${row.market_cap_category}`}
+          pagination={false}
+        />
       )}
-    </div>
+    </Card>
   );
 }

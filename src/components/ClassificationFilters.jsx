@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { Alert, Card, Space } from "antd";
 import {
   fetchBasicIndustries,
   fetchClassificationData,
   fetchStocksByBasicCode,
   updateStockClassification
 } from "../services/classificationService";
-import styles from "./ClassificationFilters.module.css";
 import ClassificationDropdowns from "./ClassificationDropdowns";
 import EditStockModal from "./EditStockModal";
 import StocksTable from "./StocksTable";
@@ -342,41 +342,40 @@ export default function ClassificationFilters({ onSelectionChange }) {
   const basicIndustryErrorMessage = basicIndustryError?.message || "Failed to load";
 
   return (
-    <div className={styles.container}>
-      <ClassificationDropdowns
-        macro={macro}
-        sector={sector}
-        industry={industry}
-        basicCode={basicCode}
-        macroOptions={macroOptions}
-        sectorOptions={sectorOptions}
-        industryOptions={industryOptions}
-        basicOptions={basicOptions}
-        isLoading={isLoading}
-        isError={isError}
-        stocksStatus={stocksStatus}
-        onMacroChange={handleMacroChange}
-        onSectorChange={handleSectorChange}
-        onIndustryChange={handleIndustryChange}
-        onBasicChange={handleBasicChange}
-        onSearch={handleSearch}
-      />
+    <Space direction="vertical" size={16} style={{ width: "100%" }}>
+      <Card>
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
+          <ClassificationDropdowns
+            macro={macro}
+            sector={sector}
+            industry={industry}
+            basicCode={basicCode}
+            macroOptions={macroOptions}
+            sectorOptions={sectorOptions}
+            industryOptions={industryOptions}
+            basicOptions={basicOptions}
+            isLoading={isLoading}
+            isError={isError}
+            stocksStatus={stocksStatus}
+            onMacroChange={handleMacroChange}
+            onSectorChange={handleSectorChange}
+            onIndustryChange={handleIndustryChange}
+            onBasicChange={handleBasicChange}
+            onSearch={handleSearch}
+          />
 
-      {isLoading && (
-        <div className={styles.status} aria-live="polite">
-          Loading classifications...
-        </div>
-      )}
-      {isError && (
-        <div className={`${styles.status} ${styles.error}`} role="alert">
-          Failed to load classifications. Please try again.
-        </div>
-      )}
-      {stocksStatus === "error" && (
-        <div className={`${styles.status} ${styles.error}`} role="alert">
-          {stocksError?.message || "Failed to load stocks. Please try again."}
-        </div>
-      )}
+          {isLoading && (
+            <Alert message="Loading classifications..." type="info" showIcon />
+          )}
+          {isError && (
+            <Alert message="Failed to load classifications. Please try again." type="error" showIcon />
+          )}
+          {stocksStatus === "error" && (
+            <Alert message={stocksError?.message || "Failed to load stocks. Please try again."} type="error" showIcon />
+          )}
+        </Space>
+      </Card>
+
       {stocksStatus === "success" && (
         <StocksTable
           stocks={stocks}
@@ -402,6 +401,6 @@ export default function ClassificationFilters({ onSelectionChange }) {
         onClose={closeEditModal}
         onUpdate={handleUpdate}
       />
-    </div>
+    </Space>
   );
 }
