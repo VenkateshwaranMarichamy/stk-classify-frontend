@@ -1,5 +1,5 @@
 import React from "react";
-import { Tabs } from "antd";
+import { ConfigProvider, Tabs } from "antd";
 import ClassificationFilters from "./components/ClassificationFilters";
 import PeerFundamentals from "./components/PeerFundamentals";
 import styles from "./App.module.css";
@@ -19,16 +19,55 @@ export default function App() {
   ];
 
   return (
-    <div className={styles.app}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>mcr-trades</h1>
-        <p className={styles.subtitle}>
-          Classification, peer analytics, and stock maintenance from one workspace.
-        </p>
-      </header>
-      <main className={styles.main}>
-        <Tabs defaultActiveKey="classify" items={tabItems} />
-      </main>
-    </div>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: "#15803d",
+          colorInfo: "#15803d",
+          borderRadius: 12,
+          colorBgLayout: "#f4fbf6"
+        },
+        components: {
+          Card: {
+            borderRadiusLG: 18
+          },
+          Tabs: {
+            itemActiveColor: "#166534",
+            itemColor: "#4b5563",
+            itemHoverColor: "#15803d",
+            inkBarColor: "#16a34a"
+          }
+        }
+      }}
+    >
+      <div className={styles.app}>
+        <header className={styles.header}>
+          <div className={styles.brandBlock}>
+            <img
+              src="/stoxatlas-logo.svg"
+              alt="StoxAtlas logo"
+              className={styles.logo}
+            />
+            <div>
+              <h1 className={styles.title}>StoxAtlas</h1>
+              <p className={styles.subtitle}>
+                Map the market with clarity. Act on the strongest signal.
+              </p>
+            </div>
+          </div>
+        </header>
+        <main className={styles.main}>
+          <Tabs defaultActiveKey="classify" items={tabItems} />
+        </main>
+        <footer className={styles.footer}>
+          <div className={styles.footerInner}>
+            <span className={styles.footerBrand}>StoxAtlas</span>
+            <span className={styles.footerText}>
+              Research-driven classification and peer intelligence workspace.
+            </span>
+          </div>
+        </footer>
+      </div>
+    </ConfigProvider>
   );
 }
