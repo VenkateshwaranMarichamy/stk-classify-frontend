@@ -82,7 +82,7 @@ export default function ClassificationFilters({ onSelectionChange }) {
     setBasicIndustryStatus("loading");
     setBasicIndustryError(null);
     try {
-      const response = await fetchBasicIndustries();
+      const response = await fetchBasicIndustries(undefined, { limit: 200 });
       const list = Array.isArray(response?.basic_industries)
         ? response.basic_industries
         : Array.isArray(response?.data)
