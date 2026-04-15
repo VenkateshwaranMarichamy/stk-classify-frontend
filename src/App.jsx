@@ -2,6 +2,7 @@ import React from "react";
 import { ConfigProvider, Tabs } from "antd";
 import ClassificationFilters from "./components/ClassificationFilters";
 import PeerFundamentals from "./components/PeerFundamentals";
+import ProfilesWorkspaceTab from "./components/ProfilesWorkspaceTab";
 import styles from "./App.module.css";
 
 export default function App() {
@@ -15,6 +16,11 @@ export default function App() {
       key: "peers",
       label: "Peers",
       children: <PeerFundamentals />
+    },
+    {
+      key: "profiles",
+      label: "Profiles",
+      children: <ProfilesWorkspaceTab />
     }
   ];
 

@@ -5,6 +5,8 @@ const STOCKS_URL = "http://localhost:8000/api/classification/stocks";
 const BASIC_INDUSTRIES_URL = "http://localhost:8000/api/classification/basic-industries";
 const PEER_YEARS_URL = "http://localhost:8000/api/fundamentals/peer-years";
 const PEERS_URL = "http://localhost:8000/api/fundamentals/peers";
+const PROFILES_URL = "http://localhost:8000/api/profiles";
+const STOCK_DIRECTORY_URL = "http://127.0.0.1:8001/stocks/all";
 
 export async function fetchClassificationData(signal) {
   const response = await axios.get(API_URL, { signal });
@@ -45,5 +47,20 @@ export async function fetchPeerFundamentals(params, signal) {
     params,
     signal
   });
+  return response.data;
+}
+
+export async function fetchStockProfile(profileId, signal) {
+  const response = await axios.get(`${PROFILES_URL}/${profileId}`, { signal });
+  return response.data;
+}
+
+export async function patchStockProfile(profileId, payload, signal) {
+  const response = await axios.patch(`${PROFILES_URL}/${profileId}`, payload, { signal });
+  return response.data;
+}
+
+export async function fetchAllStocks(signal) {
+  const response = await axios.get(STOCK_DIRECTORY_URL, { signal });
   return response.data;
 }
