@@ -64,3 +64,16 @@ export async function fetchAllStocks(signal) {
   const response = await axios.get(STOCK_DIRECTORY_URL, { signal });
   return response.data;
 }
+
+const STOCK_DETAILS_URL = "http://localhost:8000/api/stocks";
+const FUNDAMENTALS_URL = "http://localhost:8000/api/fundamentals/stock";
+
+export async function fetchStockDetails(stockId, signal) {
+  const response = await axios.get(`${STOCK_DETAILS_URL}/${stockId}`, { signal });
+  return response.data;
+}
+
+export async function fetchStockFundamentals(stockId, signal) {
+  const response = await axios.get(`${FUNDAMENTALS_URL}/${stockId}`, { signal });
+  return response.data;
+}
