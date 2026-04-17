@@ -1,14 +1,46 @@
-<svg width="168" height="44" viewBox="0 0 168 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1.5" y="1.5" width="41" height="41" rx="11" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/>
-  <path d="M10 28C15 22 19 19 24 19C28 19 31 21 35 25C37 27 39 28 41 28" stroke="#15803D" stroke-width="3" stroke-linecap="round"/>
-  <path d="M11 16L15 19L20 18" stroke="#166534" stroke-width="2.6" stroke-linecap="round"/>
-  <path d="M27 14L33 17L38 15" stroke="#16A34A" stroke-width="2.6" stroke-linecap="round"/>
-  <circle cx="18" cy="24" r="1.8" fill="#14532D"/>
-  <circle cx="33" cy="23" r="1.8" fill="#14532D"/>
-  <path d="M55 13H67.5C72.5 13 76 16 76 20.8C76 25.3 72.8 28.6 67.7 28.6H61.4V36H55V13Z" fill="#F8FAFC"/>
-  <path d="M60.9 23.5H66.3C68.7 23.5 70 22.5 70 20.7C70 18.8 68.7 17.8 66.3 17.8H60.9V23.5Z" fill="#14532D"/>
-  <path d="M79.5 36V13H85.9V30.7H97V36H79.5Z" fill="#F8FAFC"/>
-  <path d="M100.3 36V13H117.8V18.2H106.7V21.9H116.4V26.7H106.7V30.7H118V36H100.3Z" fill="#F8FAFC"/>
-  <path d="M121.5 36V13H128.9L134.1 22.2L139.3 13H146.6V36H140.7V22.1L134.1 33L127.4 22.1V36H121.5Z" fill="#F8FAFC"/>
-  <path d="M149.4 36L159 13H166.5L156.9 36H149.4Z" fill="#F8FAFC"/>
+<svg width="210" height="56" viewBox="0 0 210 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bull icon scaled to ~48px, offset to x=4 -->
+
+  <!-- Left horn -->
+  <path d="M17 19 C14 15 9 8 11 4 C12 2 13 2 14 4 C15 5 14 9 16 13 C17 15 18 17 19 18 Z" fill="#5cb85c"/>
+
+  <!-- Right horn -->
+  <path d="M31 19 C34 15 39 8 37 4 C36 2 35 2 34 4 C33 5 34 9 32 13 C31 15 30 17 29 18 Z" fill="#5cb85c"/>
+
+  <!-- Left ear -->
+  <path d="M13 21 C10 19 8 22 10 25 C11 26 14 25 15 23 Z" fill="#5cb85c"/>
+
+  <!-- Right ear -->
+  <path d="M35 21 C38 19 40 22 38 25 C37 26 34 25 33 23 Z" fill="#5cb85c"/>
+
+  <!-- Top V-notch -->
+  <path d="M20 16 C22 13 24 15 24 15 C24 15 26 13 28 16 C27 17 25 17 24 16 C23 17 21 17 20 16 Z" fill="#5cb85c"/>
+
+  <!-- Left face -->
+  <path d="M15 22 C13 24 13 28 14 31 C15 34 17 37 20 39 C21 40 23 41 24 41" stroke="#5cb85c" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Right face -->
+  <path d="M33 22 C35 24 35 28 34 31 C33 34 31 37 28 39 C27 40 25 41 24 41" stroke="#5cb85c" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Left cheek -->
+  <path d="M15 22 C14 20 15 18 17 17 C19 16 20 17 21 18" stroke="#5cb85c" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Right cheek -->
+  <path d="M33 22 C34 20 33 18 31 17 C29 16 28 17 27 18" stroke="#5cb85c" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Snout left -->
+  <path d="M20 39 C18 40 18 42 19 43 C21 45 23 45 24 44" stroke="#5cb85c" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Snout right -->
+  <path d="M28 39 C30 40 30 42 29 43 C27 45 25 45 24 44" stroke="#5cb85c" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- "StoxAtlas" wordmark -->
+  <text
+    x="52"
+    y="35"
+    font-family="'Segoe UI', system-ui, -apple-system, sans-serif"
+    font-size="22"
+    font-weight="700"
+    letter-spacing="0.3"
+    fill="#22c55e">StoxAtlas</text>
 </svg>

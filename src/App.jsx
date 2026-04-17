@@ -57,15 +57,9 @@ export default function App() {
           <div className={styles.brandBlock}>
             <img
               src="/stoxatlas-logo.svg"
-              alt="StoxAtlas logo"
+              alt="StoxAtlas"
               className={styles.logo}
             />
-            <div>
-              <h1 className={styles.title}>StoxAtlas</h1>
-              <p className={styles.subtitle}>
-                Map the market with clarity. Act on the strongest signal.
-              </p>
-            </div>
           </div>
         </header>
         <main className={styles.main}>
