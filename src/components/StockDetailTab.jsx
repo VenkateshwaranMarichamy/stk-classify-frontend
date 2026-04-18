@@ -125,17 +125,6 @@ function ClassificationSection({ data, loading, error, onRetry }) {
     );
   }
 
-  // Parse comma-separated string fields into tag arrays
-  const indexTags = (data?.index_stock || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const cuttingEdgeTags = (data?.cutting_edge_products || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
   const labelStyle = {
     backgroundColor: "#f0fdf4",
     fontWeight: 600,
@@ -158,16 +147,6 @@ function ClassificationSection({ data, loading, error, onRetry }) {
         </Descriptions.Item>
         <Descriptions.Item label="Market Cap">
           {data?.market_cap_category ?? "—"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Index">
-          {indexTags.length > 0
-            ? indexTags.map((v) => <Tag key={v}>{v}</Tag>)
-            : "—"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Cutting Edge Products" span={2}>
-          {cuttingEdgeTags.length > 0
-            ? cuttingEdgeTags.map((v) => <Tag key={v} color="blue">{v}</Tag>)
-            : "—"}
         </Descriptions.Item>
       </Descriptions>
     </Card>
@@ -261,6 +240,14 @@ function ProfileSection({ data, loading, error, onRetry, stockDirectory }) {
           </Descriptions.Item>
           <Descriptions.Item label="Subsidiaries">
             {renderTags(subsidiaryNames)}
+          </Descriptions.Item>
+          <Descriptions.Item label="Index">
+            {renderTags(data?.index_stock)}
+          </Descriptions.Item>
+          <Descriptions.Item label="Cutting Edge Products">
+            {Array.isArray(data?.cutting_edge_products) && data.cutting_edge_products.length > 0
+              ? data.cutting_edge_products.map((v) => <Tag key={v} color="blue">{v}</Tag>)
+              : "—"}
           </Descriptions.Item>
         </Descriptions>
       </Space>

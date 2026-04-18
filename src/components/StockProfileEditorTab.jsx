@@ -35,7 +35,7 @@ const RISK_LEVEL_OPTIONS = [
   "VERY HIGH"
 ];
 
-const ARRAY_FIELDS = ["associated_brands", "location", "keynotes", "clients", "products"];
+const ARRAY_FIELDS = ["associated_brands", "location", "keynotes", "clients", "products", "index_stock", "cutting_edge_products"];
 // ID-array fields: stored as arrays of numbers, sent as arrays of numbers
 const ID_ARRAY_FIELDS = ["parent_companies", "subsidiaries"];
 const ALL_FIELDS = [
@@ -48,6 +48,8 @@ const ALL_FIELDS = [
   "keynotes",
   "clients",
   "products",
+  "index_stock",
+  "cutting_edge_products",
   "parent_companies",
   "subsidiaries"
 ];
@@ -61,6 +63,8 @@ const EMPTY_PROFILE_FORM = {
   keynotes: [],
   clients: [],
   products: [],
+  index_stock: [],
+  cutting_edge_products: [],
   parent_companies: [],
   subsidiaries: []
 };
@@ -88,6 +92,8 @@ function normalizeProfile(profile) {
     keynotes: normalizeTagArray(profile?.keynotes),
     clients: normalizeTagArray(profile?.clients),
     products: normalizeTagArray(profile?.products),
+    index_stock: normalizeTagArray(profile?.index_stock),
+    cutting_edge_products: normalizeTagArray(profile?.cutting_edge_products),
     parent_companies: normalizeIdArray(profile?.parent_companies),
     subsidiaries: normalizeIdArray(profile?.subsidiaries)
   };
@@ -275,7 +281,7 @@ export default function StockProfileEditorTab({ profileId, onClose }) {
       const response = await fetchStockProfile(profileId, signal);
       const normalized = normalizeProfile(response);
       setProfileMeta({
-        id: response?.id ?? profileId,
+        id: response?.stock_id ?? profileId,
         stock_name: response?.stock_name || response?.name || `Profile ${profileId}`
       });
       setOriginalForm(normalized);
@@ -372,7 +378,7 @@ export default function StockProfileEditorTab({ profileId, onClose }) {
       const response = await patchStockProfile(profileId, patchPayload);
       const normalized = normalizeProfile(response);
       setProfileMeta({
-        id: response?.id ?? profileId,
+        id: response?.stock_id ?? profileId,
         stock_name: response?.stock_name || response?.name || `Profile ${profileId}`
       });
       setOriginalForm(normalized);
@@ -575,6 +581,32 @@ export default function StockProfileEditorTab({ profileId, onClose }) {
                     onChange={(value) => updateField("products", value)}
                     placeholder="Add products and press Enter"
                     status={dirtyMap.products ? "warning" : ""}
+                    disabled={saving}
+                  />
+                </Form.Item>
+              </Col>
+
+              <Col xs={24} md={12}>
+                <Form.Item label={<DirtyLabel label="Index" dirty={dirtyMap.index_stock} />}>
+                  <Select
+                    mode="tags"
+                    value={currentForm.index_stock}
+                    onChange={(value) => updateField("index_stock", value)}
+                    placeholder="Add indices and press Enter"
+                    status={dirtyMap.index_stock ? "warning" : ""}
+                    disabled={saving}
+                  />
+                </Form.Item>
+              </Col>
+
+              <Col xs={24} md={12}>
+                <Form.Item label={<DirtyLabel label="Cutting Edge Products" dirty={dirtyMap.cutting_edge_products} />}>
+                  <Select
+                    mode="tags"
+                    value={currentForm.cutting_edge_products}
+                    onChange={(value) => updateField("cutting_edge_products", value)}
+                    placeholder="Add cutting edge products and press Enter"
+                    status={dirtyMap.cutting_edge_products ? "warning" : ""}
                     disabled={saving}
                   />
                 </Form.Item>
