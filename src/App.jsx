@@ -4,6 +4,7 @@ import ClassificationFilters from "./components/ClassificationFilters";
 import PeerFundamentals from "./components/PeerFundamentals";
 import ProfilesWorkspaceTab from "./components/ProfilesWorkspaceTab";
 import StockDetailTab from "./components/StockDetailTab";
+import UnclassifiedStocksTab from "./components/UnclassifiedStocksTab";
 import styles from "./App.module.css";
 
 export default function App() {
@@ -27,6 +28,11 @@ export default function App() {
       key: "stock-detail",
       label: "Stock Detail",
       children: <StockDetailTab />
+    },
+    {
+      key: "unclassified",
+      label: "Unclassified",
+      children: <UnclassifiedStocksTab />
     }
   ];
 

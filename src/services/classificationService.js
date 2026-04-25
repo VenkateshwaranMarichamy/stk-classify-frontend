@@ -77,3 +77,13 @@ export async function fetchStockFundamentals(stockId, signal) {
   const response = await axios.get(`${FUNDAMENTALS_URL}/${stockId}`, { signal });
   return response.data;
 }
+
+export async function fetchUnclassifiedStocks(signal) {
+  const response = await axios.get(`${STOCK_DETAILS_URL}/unclassified`, { signal });
+  return response.data;
+}
+
+export async function classifyStock(stockId, payload, signal) {
+  const response = await axios.post(`${STOCK_DETAILS_URL}/${stockId}/classify`, payload, { signal });
+  return response.data;
+}
