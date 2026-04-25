@@ -6,7 +6,7 @@ const BASIC_INDUSTRIES_URL = "http://localhost:8000/api/classification/basic-ind
 const PEER_YEARS_URL = "http://localhost:8000/api/fundamentals/peer-years";
 const PEERS_URL = "http://localhost:8000/api/fundamentals/peers";
 const PROFILES_URL = "http://localhost:8000/api/profiles";
-const STOCK_DIRECTORY_URL = "http://127.0.0.1:8001/stocks/all";
+const STOCK_DIRECTORY_URL = "http://localhost:8000/api/stocks/active";
 
 export async function fetchClassificationData(signal) {
   const response = await axios.get(API_URL, { signal });

@@ -22,12 +22,21 @@ export default function ProfilesWorkspaceTab() {
         ? response
             .map((stock) => ({
               id: stock?.id,
-              name: (stock?.name ?? "").toString().trim(),
-              symbol: (stock?.symbol ?? "").toString().trim()
+              name: (stock?.name ?? stock?.company_name ?? "").toString().trim(),
+              symbol: (stock?.symbol ?? stock?.trading_symbol ?? "").toString().trim()
             }))
             .filter((stock) => Number.isInteger(stock.id) && stock.name)
             .sort((left, right) => left.name.localeCompare(right.name))
-        : [];
+        : Array.isArray(response?.data)
+          ? response.data
+              .map((stock) => ({
+                id: stock?.id,
+                name: (stock?.name ?? stock?.company_name ?? "").toString().trim(),
+                symbol: (stock?.symbol ?? stock?.trading_symbol ?? "").toString().trim()
+              }))
+              .filter((stock) => Number.isInteger(stock.id) && stock.name)
+              .sort((left, right) => left.name.localeCompare(right.name))
+          : [];
 
       setStocks(normalizedStocks);
     } catch (err) {

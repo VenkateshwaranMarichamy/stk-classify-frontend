@@ -105,6 +105,37 @@ const METRIC_GROUPS = [
 // ---------------------------------------------------------------------------
 // ClassificationSection
 // ---------------------------------------------------------------------------
+const CAP_COLOR = {
+  MEGA_CAP: "gold", LARGE_CAP: "blue", MID_CAP: "cyan",
+  SMALL_CAP: "geekblue", MICRO_CAP: "purple"
+};
+const RISK_COLOR = { HIGH: "red", MEDIUM: "orange", LOW: "green" };
+const SIZE_COLOR = { LARGE: "blue", MEDIUM: "cyan", SMALL: "geekblue", MICRO: "purple" };
+
+function MetricBadge({ label, value, colorMap }) {
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 6,
+      padding: "12px 20px",
+      background: "#f8fafc",
+      borderRadius: 10,
+      border: "1px solid #e2e8f0",
+      minWidth: 120
+    }}>
+      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        {label}
+      </span>
+      {value
+        ? <Tag color={colorMap[value] || "default"} style={{ margin: 0, fontSize: 13, padding: "2px 10px" }}>{value}</Tag>
+        : <span style={{ color: "#94a3b8", fontSize: 13 }}>—</span>
+      }
+    </div>
+  );
+}
+
 function ClassificationSection({ data, loading, error, onRetry }) {
   if (loading) {
     return <Skeleton active paragraph={{ rows: 3 }} />;
@@ -133,22 +164,29 @@ function ClassificationSection({ data, loading, error, onRetry }) {
 
   return (
     <Card title="Classification">
-      <Descriptions
-        bordered
-        size="small"
-        column={{ xs: 1, sm: 2 }}
-        labelStyle={labelStyle}
-      >
-        <Descriptions.Item label="Company Name">
-          {data?.company_name ?? "—"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Basic Industry">
-          {data?.basic_industry_name ?? "—"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Market Cap">
-          {data?.market_cap_category ?? "—"}
-        </Descriptions.Item>
-      </Descriptions>
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Descriptions
+          bordered
+          size="small"
+          column={{ xs: 1, sm: 2 }}
+          labelStyle={labelStyle}
+        >
+          <Descriptions.Item label="Company Name">
+            {data?.company_name ?? "—"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Basic Industry">
+            {data?.basic_industry_name ?? "—"}
+          </Descriptions.Item>
+        </Descriptions>
+
+        {/* 4 metric flags as visual badges */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <MetricBadge label="Market Cap" value={data?.market_cap_category} colorMap={CAP_COLOR} />
+          <MetricBadge label="Revenue Size" value={data?.revenue_size} colorMap={SIZE_COLOR} />
+          <MetricBadge label="Tech Risk" value={data?.tech_risk} colorMap={RISK_COLOR} />
+          <MetricBadge label="Fund Risk" value={data?.fund_risk} colorMap={RISK_COLOR} />
+        </div>
+      </Space>
     </Card>
   );
 }
@@ -207,8 +245,8 @@ function ProfileSection({ data, loading, error, onRetry, stockDirectory }) {
           <Descriptions.Item label="Ownership Type">
             {data?.ownership_type ?? "—"}
           </Descriptions.Item>
-          <Descriptions.Item label="Risk Level">
-            {data?.risk_level ?? "—"}
+          <Descriptions.Item label="Business Risk Level">
+            {data?.business_risk_level ?? "—"}
           </Descriptions.Item>
           <Descriptions.Item label="Business Group">
             {data?.business_group || "—"}
@@ -403,15 +441,22 @@ export default function StockDetailTab() {
     setStocksError("");
     try {
       const response = await fetchAllStocks(signal);
-      const normalized = Array.isArray(response)
+      // Handle both plain array and wrapped { data: [...] } shapes
+      const raw = Array.isArray(response)
         ? response
-            .map((s) => ({
-              id: s?.id,
-              name: (s?.name ?? "").toString().trim(),
-              symbol: (s?.symbol ?? "").toString().trim(),
-            }))
-            .filter((s) => Number.isInteger(s.id) && s.name)
-        : [];
+        : Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.stocks)
+            ? response.stocks
+            : [];
+      const normalized = raw
+        .map((s) => ({
+          id: s?.id,
+          name: (s?.name ?? s?.company_name ?? "").toString().trim(),
+          // API may use symbol or trading_symbol
+          symbol: (s?.symbol ?? s?.trading_symbol ?? "").toString().trim(),
+        }))
+        .filter((s) => Number.isInteger(s.id) && s.name);
       setStocks(normalized);
     } catch (err) {
       if (err?.name === "CanceledError") return;

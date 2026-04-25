@@ -28,11 +28,9 @@ const OWNERSHIP_OPTIONS = [
   "PSU"
 ];
 const RISK_LEVEL_OPTIONS = [
-  "VERY LOW",
-  "LOW",
-  "MEDIUM",
   "HIGH",
-  "VERY HIGH"
+  "MEDIUM",
+  "LOW"
 ];
 
 const ARRAY_FIELDS = ["associated_brands", "location", "keynotes", "clients", "products", "index_stock", "cutting_edge_products"];
@@ -42,7 +40,7 @@ const ALL_FIELDS = [
   "associated_brands",
   "business_group",
   "information",
-  "risk_level",
+  "business_risk_level",
   "location",
   "ownership_type",
   "keynotes",
@@ -57,7 +55,7 @@ const EMPTY_PROFILE_FORM = {
   associated_brands: [],
   business_group: "",
   information: "",
-  risk_level: "",
+  business_risk_level: "",
   location: [],
   ownership_type: null,
   keynotes: [],
@@ -86,7 +84,7 @@ function normalizeProfile(profile) {
     associated_brands: normalizeTagArray(profile?.associated_brands),
     business_group: (profile?.business_group ?? "").toString(),
     information: (profile?.information ?? "").toString(),
-    risk_level: (profile?.risk_level ?? "").toString(),
+    business_risk_level: (profile?.business_risk_level ?? "").toString(),
     location: normalizeTagArray(profile?.location),
     ownership_type: profile?.ownership_type ?? null,
     keynotes: normalizeTagArray(profile?.keynotes),
@@ -256,7 +254,12 @@ export default function StockProfileEditorTab({ profileId, onClose }) {
     const controller = new AbortController();
     fetchAllStocks(controller.signal)
       .then((data) => {
-        if (Array.isArray(data)) setAllStocks(data);
+        const raw = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+            ? data.data
+            : [];
+        setAllStocks(raw);
       })
       .catch(() => {});
     return () => controller.abort();
@@ -522,13 +525,13 @@ export default function StockProfileEditorTab({ profileId, onClose }) {
               </Col>
 
               <Col xs={24} md={12}>
-                <Form.Item label={<DirtyLabel label="Risk Level" dirty={dirtyMap.risk_level} />}>
+                <Form.Item label={<DirtyLabel label="Business Risk Level" dirty={dirtyMap.business_risk_level} />}>
                   <Select
                     allowClear
-                    value={currentForm.risk_level || undefined}
-                    onChange={(value) => updateField("risk_level", value ?? "")}
+                    value={currentForm.business_risk_level || undefined}
+                    onChange={(value) => updateField("business_risk_level", value ?? "")}
                     options={RISK_LEVEL_OPTIONS.map((option) => ({ label: option, value: option }))}
-                    status={dirtyMap.risk_level ? "warning" : ""}
+                    status={dirtyMap.business_risk_level ? "warning" : ""}
                     disabled={saving}
                   />
                 </Form.Item>
