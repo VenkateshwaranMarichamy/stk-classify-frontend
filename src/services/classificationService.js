@@ -87,3 +87,18 @@ export async function classifyStock(stockId, payload, signal) {
   const response = await axios.post(`${STOCK_DETAILS_URL}/${stockId}/classify`, payload, { signal });
   return response.data;
 }
+
+const SCREENER_URL = "http://localhost:8004/screener";
+
+export async function fetchTechnicalIndicators(tickerId, signal) {
+  const response = await axios.get(`${SCREENER_URL}/indicators/${tickerId}`, { signal });
+  return response.data;
+}
+
+export async function fetchIndustryTechnicalIndicators(basicIndCode, params = {}, signal) {
+  const response = await axios.get(`${SCREENER_URL}/industry/${basicIndCode}/indicators`, {
+    params,
+    signal
+  });
+  return response.data;
+}
