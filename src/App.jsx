@@ -1,5 +1,6 @@
-import React from "react";
-import { ConfigProvider, Tabs } from "antd";
+import React, { useState } from "react";
+import { ConfigProvider, Dropdown, Tabs } from "antd";
+import { DownOutlined } from "@ant-design/icons";
 import ClassificationFilters from "./components/ClassificationFilters";
 import PeerFundamentals from "./components/PeerFundamentals";
 import ProfilesWorkspaceTab from "./components/ProfilesWorkspaceTab";
@@ -8,11 +9,36 @@ import UnclassifiedStocksTab from "./components/UnclassifiedStocksTab";
 import styles from "./App.module.css";
 
 export default function App() {
+  const [classifyView, setClassifyView] = useState("classified"); // "classified" | "unclassified"
+
+  const classifyMenuItems = [
+    { key: "classified", label: "Classified" },
+    { key: "unclassified", label: "Unclassified" }
+  ];
+
+  const classifyLabel = (
+    <Dropdown
+      menu={{
+        items: classifyMenuItems,
+        selectedKeys: [classifyView],
+        onClick: ({ key }) => setClassifyView(key)
+      }}
+      trigger={["click"]}
+    >
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+        Classification
+        <DownOutlined style={{ fontSize: 10 }} />
+      </span>
+    </Dropdown>
+  );
+
   const tabItems = [
     {
-      key: "classify",
-      label: "Classify",
-      children: <ClassificationFilters />
+      key: "classification",
+      label: classifyLabel,
+      children: classifyView === "classified"
+        ? <ClassificationFilters />
+        : <UnclassifiedStocksTab />
     },
     {
       key: "peers",
@@ -28,11 +54,6 @@ export default function App() {
       key: "stock-detail",
       label: "Stock Detail",
       children: <StockDetailTab />
-    },
-    {
-      key: "unclassified",
-      label: "Unclassified",
-      children: <UnclassifiedStocksTab />
     }
   ];
 

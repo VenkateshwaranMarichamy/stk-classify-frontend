@@ -4,9 +4,11 @@ import {
   Badge,
   Button,
   Card,
+  Col,
   Form,
   Input,
   Modal,
+  Row,
   Select,
   Space,
   Table,
@@ -21,8 +23,12 @@ import {
 } from "../services/classificationService";
 
 const { Text, Title } = Typography;
+const { TextArea } = Input;
 
-const MARKET_CAP_OPTIONS = ["LARGECAP", "MIDCAP", "SMALLCAP"];
+const MARKET_CAP_OPTIONS = ["MEGA_CAP", "LARGE_CAP", "MID_CAP", "SMALL_CAP", "MICRO_CAP"];
+const TECH_RISK_OPTIONS = ["HIGH", "MEDIUM", "LOW"];
+const FUND_RISK_OPTIONS = ["HIGH", "MEDIUM", "LOW"];
+const REVENUE_SIZE_OPTIONS = ["LARGE", "MEDIUM", "SMALL", "MICRO"];
 
 export default function UnclassifiedStocksTab() {
   const [messageApi, contextHolder] = message.useMessage();
@@ -44,6 +50,10 @@ export default function UnclassifiedStocksTab() {
   const [companyName, setCompanyName] = useState("");
   const [basicCode, setBasicCode] = useState("");
   const [marketCap, setMarketCap] = useState("");
+  const [techRisk, setTechRisk] = useState("");
+  const [fundRisk, setFundRisk] = useState("");
+  const [revenueSize, setRevenueSize] = useState("");
+  const [comments, setComments] = useState("");
   const [submitStatus, setSubmitStatus] = useState("idle"); // idle | loading | success | error
   const [submitError, setSubmitError] = useState("");
 
@@ -115,6 +125,10 @@ export default function UnclassifiedStocksTab() {
     setCompanyName(stock.name || "");
     setBasicCode("");
     setMarketCap("");
+    setTechRisk("");
+    setFundRisk("");
+    setRevenueSize("");
+    setComments("");
     setSubmitStatus("idle");
     setSubmitError("");
     setModalOpen(true);
@@ -124,6 +138,10 @@ export default function UnclassifiedStocksTab() {
   function closeModal() {
     setModalOpen(false);
     setSelectedStock(null);
+    setTechRisk("");
+    setFundRisk("");
+    setRevenueSize("");
+    setComments("");
     setSubmitStatus("idle");
     setSubmitError("");
   }
@@ -152,7 +170,11 @@ export default function UnclassifiedStocksTab() {
       await classifyStock(selectedStock.id, {
         company_name: companyName.trim(),
         basic_ind_code: basicCode,
-        market_cap_category: marketCap
+        market_cap_category: marketCap,
+        tech_risk: techRisk || null,
+        fund_risk: fundRisk || null,
+        revenue_size: revenueSize || null,
+        comments: comments || null
       });
 
       // Remove classified stock from the list
@@ -311,6 +333,7 @@ export default function UnclassifiedStocksTab() {
         open={modalOpen}
         onCancel={closeModal}
         destroyOnClose
+        width={600}
         footer={
           <Space>
             <Button onClick={closeModal} disabled={submitStatus === "loading"}>
@@ -347,12 +370,62 @@ export default function UnclassifiedStocksTab() {
             />
           </Form.Item>
 
-          <Form.Item label="Market Cap" required>
-            <Select
-              value={marketCap || undefined}
-              onChange={(val) => setMarketCap(val || "")}
-              placeholder="Select market cap"
-              options={MARKET_CAP_OPTIONS.map((o) => ({ label: o, value: o }))}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Market Cap" required>
+                <Select
+                  allowClear
+                  value={marketCap || undefined}
+                  onChange={(val) => setMarketCap(val || "")}
+                  placeholder="Select market cap"
+                  options={MARKET_CAP_OPTIONS.map((o) => ({ label: o, value: o }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Revenue Size">
+                <Select
+                  allowClear
+                  value={revenueSize || undefined}
+                  onChange={(val) => setRevenueSize(val || "")}
+                  placeholder="Select revenue size"
+                  options={REVENUE_SIZE_OPTIONS.map((o) => ({ label: o, value: o }))}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Tech Risk">
+                <Select
+                  allowClear
+                  value={techRisk || undefined}
+                  onChange={(val) => setTechRisk(val || "")}
+                  placeholder="Select tech risk"
+                  options={TECH_RISK_OPTIONS.map((o) => ({ label: o, value: o }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Fund Risk">
+                <Select
+                  allowClear
+                  value={fundRisk || undefined}
+                  onChange={(val) => setFundRisk(val || "")}
+                  placeholder="Select fund risk"
+                  options={FUND_RISK_OPTIONS.map((o) => ({ label: o, value: o }))}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item label="Comments">
+            <TextArea
+              rows={3}
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              placeholder="Add comments..."
             />
           </Form.Item>
 

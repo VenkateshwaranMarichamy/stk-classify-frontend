@@ -17,7 +17,10 @@ import {
   normalizePayload
 } from "./classificationUtils";
 
-const MARKET_CAP_OPTIONS = ["LARGECAP", "MIDCAP", "SMALLCAP"];
+const MARKET_CAP_OPTIONS = ["MEGA_CAP", "LARGE_CAP", "MID_CAP", "SMALL_CAP", "MICRO_CAP"];
+const TECH_RISK_OPTIONS = ["HIGH", "MEDIUM", "LOW"];
+const FUND_RISK_OPTIONS = ["HIGH", "MEDIUM", "LOW"];
+const REVENUE_SIZE_OPTIONS = ["LARGE", "MEDIUM", "SMALL", "MICRO"];
 
 export default function ClassificationFilters({ onSelectionChange }) {
   const [data, setData] = useState(null);
@@ -44,6 +47,10 @@ export default function ClassificationFilters({ onSelectionChange }) {
   const [editMarketCap, setEditMarketCap] = useState("");
   const [editBasicCode, setEditBasicCode] = useState("");
   const [editBasicName, setEditBasicName] = useState("");
+  const [editTechRisk, setEditTechRisk] = useState("");
+  const [editFundRisk, setEditFundRisk] = useState("");
+  const [editRevenueSize, setEditRevenueSize] = useState("");
+  const [editComments, setEditComments] = useState("");
   const [updateStatus, setUpdateStatus] = useState("idle"); // idle | loading | success | error
   const [updateError, setUpdateError] = useState("");
 
@@ -254,6 +261,10 @@ export default function ClassificationFilters({ onSelectionChange }) {
       "";
     setEditBasicCode(currentCode);
     setEditBasicName(currentName);
+    setEditTechRisk(row?.tech_risk || "");
+    setEditFundRisk(row?.fund_risk || "");
+    setEditRevenueSize(row?.revenue_size || "");
+    setEditComments(row?.comments || "");
     setUpdateStatus("idle");
     setUpdateError("");
     setIsEditOpen(true);
@@ -294,7 +305,11 @@ export default function ClassificationFilters({ onSelectionChange }) {
       const response = await updateStockClassification(editCompanyId, {
         company_name: editCompany.trim(),
         basic_ind_code: editBasicCode,
-        market_cap_category: editMarketCap
+        market_cap_category: editMarketCap,
+        tech_risk: editTechRisk || null,
+        fund_risk: editFundRisk || null,
+        revenue_size: editRevenueSize || null,
+        comments: editComments || null
       });
 
       const updatedBasicCode = response?.basic_ind_code ?? editBasicCode;
@@ -308,7 +323,11 @@ export default function ClassificationFilters({ onSelectionChange }) {
               ? {
                   ...row,
                   company_name: updatedCompanyName,
-                  market_cap_category: updatedMarketCap
+                  market_cap_category: updatedMarketCap,
+                  tech_risk: response?.tech_risk ?? editTechRisk,
+                  fund_risk: response?.fund_risk ?? editFundRisk,
+                  revenue_size: response?.revenue_size ?? editRevenueSize,
+                  comments: response?.comments ?? editComments
                 }
               : row
           )
@@ -389,7 +408,14 @@ export default function ClassificationFilters({ onSelectionChange }) {
         editCompany={editCompany}
         editMarketCap={editMarketCap}
         editBasicCode={editBasicCode}
+        editTechRisk={editTechRisk}
+        editFundRisk={editFundRisk}
+        editRevenueSize={editRevenueSize}
+        editComments={editComments}
         marketCapOptions={MARKET_CAP_OPTIONS}
+        techRiskOptions={TECH_RISK_OPTIONS}
+        fundRiskOptions={FUND_RISK_OPTIONS}
+        revenueSizeOptions={REVENUE_SIZE_OPTIONS}
         basicIndustryStatus={basicIndustryStatus}
         basicIndustryErrorMessage={basicIndustryErrorMessage}
         modalBasicOptions={modalBasicOptionsWithCurrent}
@@ -398,6 +424,10 @@ export default function ClassificationFilters({ onSelectionChange }) {
         onCompanyChange={setEditCompany}
         onMarketCapChange={setEditMarketCap}
         onBasicCodeChange={setEditBasicCode}
+        onTechRiskChange={setEditTechRisk}
+        onFundRiskChange={setEditFundRisk}
+        onRevenueSizeChange={setEditRevenueSize}
+        onCommentsChange={setEditComments}
         onClose={closeEditModal}
         onUpdate={handleUpdate}
       />
