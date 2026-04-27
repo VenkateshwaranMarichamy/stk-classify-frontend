@@ -18,7 +18,8 @@ import {
   fetchAllStocks,
   fetchStockDetails,
   fetchStockFundamentals,
-  fetchStockProfile
+  fetchStockProfile,
+  fetchTechnicalIndicators
 } from "../services/classificationService";
 
 const { Text, Title } = Typography;
@@ -404,6 +405,123 @@ function FundamentalsSection({ data, loading, error, onRetry }) {
 }
 
 // ---------------------------------------------------------------------------
+// TechnicalSection
+// ---------------------------------------------------------------------------
+const TECH_GROUPS = [
+  { group: "Price", items: [
+    { key: "last_close",         label: "Last Close" },
+    { key: "close",              label: "Close" },
+    { key: "high_52w",           label: "52W High" },
+    { key: "low_52w",            label: "52W Low" },
+    { key: "high_ytd",           label: "YTD High" },
+    { key: "low_ytd",            label: "YTD Low" },
+    { key: "pct_from_52w_high",  label: "% from 52W High" },
+    { key: "pct_from_52w_low",   label: "% from 52W Low" },
+    { key: "vwap",               label: "VWAP" },
+  ]},
+  { group: "Moving Averages", items: [
+    { key: "sma_20",   label: "SMA 20" },
+    { key: "sma_50",   label: "SMA 50" },
+    { key: "sma_100",  label: "SMA 100" },
+    { key: "sma_200",  label: "SMA 200" },
+    { key: "ema_9",    label: "EMA 9" },
+    { key: "ema_21",   label: "EMA 21" },
+    { key: "ema_50",   label: "EMA 50" },
+    { key: "ema_200",  label: "EMA 200" },
+  ]},
+  { group: "Momentum", items: [
+    { key: "rsi_14",         label: "RSI 14" },
+    { key: "macd_line",      label: "MACD Line" },
+    { key: "macd_signal",    label: "MACD Signal" },
+    { key: "macd_histogram", label: "MACD Histogram" },
+    { key: "stoch_k",        label: "Stoch K" },
+    { key: "stoch_d",        label: "Stoch D" },
+    { key: "cci_20",         label: "CCI 20" },
+    { key: "williams_r_14",  label: "Williams R 14" },
+    { key: "roc_10",         label: "ROC 10" },
+  ]},
+  { group: "Trend", items: [
+    { key: "adx_14",             label: "ADX 14" },
+    { key: "golden_cross_state", label: "Golden Cross State" },
+    { key: "golden_cross_event", label: "Golden Cross Event" },
+    { key: "death_cross_event",  label: "Death Cross Event" },
+  ]},
+  { group: "Volatility", items: [
+    { key: "bb_upper",           label: "BB Upper" },
+    { key: "bb_middle",          label: "BB Middle" },
+    { key: "bb_lower",           label: "BB Lower" },
+    { key: "atr_14",             label: "ATR 14" },
+    { key: "stddev_20",          label: "Std Dev 20" },
+    { key: "hist_volatility_20", label: "Hist Volatility 20" },
+  ]},
+  { group: "Volume", items: [
+    { key: "avg_volume_1m", label: "Avg Volume 1M" },
+    { key: "avg_volume_1y", label: "Avg Volume 1Y" },
+    { key: "volume_ratio",  label: "Volume Ratio" },
+    { key: "obv",           label: "OBV" },
+  ]},
+  { group: "Pivot", items: [
+    { key: "pivot_point",        label: "Pivot Point" },
+    { key: "pivot_support_1",    label: "Support 1" },
+    { key: "pivot_resistance_1", label: "Resistance 1" },
+  ]},
+];
+
+function TechnicalSection({ data, loading, error, onRetry }) {
+  if (loading) return <Skeleton active paragraph={{ rows: 4 }} />;
+
+  if (error) {
+    return (
+      <Alert type="error" message={error} showIcon
+        action={<Button size="small" onClick={onRetry}>Retry</Button>} />
+    );
+  }
+
+  if (!data) return null;
+
+  const labelStyle = { backgroundColor: "#f0fdf4", fontWeight: 600, color: "#166534" };
+
+  function renderValue(key, val) {
+    if (val === null || val === undefined) return "—";
+    if (key === "golden_cross_state") {
+      return <Tag color={val === "above" ? "green" : "red"}>{val}</Tag>;
+    }
+    if (key === "golden_cross_event" || key === "death_cross_event") {
+      return typeof val === "boolean"
+        ? <Tag color={val ? "green" : "default"}>{val ? "Yes" : "No"}</Tag>
+        : String(val);
+    }
+    return val;
+  }
+
+  return (
+    <Card title="Technical Indicators">
+      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          Trade date: {data.trade_date ?? "—"} · Computed: {data.computed_date ?? "—"} ·
+          Data range: {data.ohlcv_start_date ?? "—"} → {data.ohlcv_end_date ?? "—"}
+        </Typography.Text>
+
+        {TECH_GROUPS.map(({ group, items }) => (
+          <div key={group}>
+            <Typography.Text strong style={{ fontSize: 13, color: "#166534", display: "block", marginBottom: 6 }}>
+              {group}
+            </Typography.Text>
+            <Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }} labelStyle={labelStyle}>
+              {items.map(({ key, label }) => (
+                <Descriptions.Item key={key} label={label}>
+                  {renderValue(key, data[key])}
+                </Descriptions.Item>
+              ))}
+            </Descriptions>
+          </div>
+        ))}
+      </Space>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // StockDetailTab (main export)
 // ---------------------------------------------------------------------------
 export default function StockDetailTab() {
@@ -429,6 +547,11 @@ export default function StockDetailTab() {
   const [fundamentalsData, setFundamentalsData] = useState(null);
   const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
   const [fundamentalsError, setFundamentalsError] = useState("");
+
+  // Technical section
+  const [technicalData, setTechnicalData] = useState(null);
+  const [technicalLoading, setTechnicalLoading] = useState(false);
+  const [technicalError, setTechnicalError] = useState("");
 
   // AbortController ref for in-flight stock detail requests
   const abortControllerRef = useRef(null);
@@ -503,6 +626,9 @@ export default function StockDetailTab() {
         setFundamentalsData(null);
         setFundamentalsLoading(false);
         setFundamentalsError("");
+        setTechnicalData(null);
+        setTechnicalLoading(false);
+        setTechnicalError("");
         return;
       }
 
@@ -526,6 +652,10 @@ export default function StockDetailTab() {
       setFundamentalsData(null);
       setFundamentalsLoading(true);
       setFundamentalsError("");
+
+      setTechnicalData(null);
+      setTechnicalLoading(true);
+      setTechnicalError("");
 
       // Fire all three fetches in parallel (independent — do NOT await sequentially)
       fetchStockDetails(id, signal)
@@ -557,6 +687,16 @@ export default function StockDetailTab() {
           );
         })
         .finally(() => setFundamentalsLoading(false));
+
+      fetchTechnicalIndicators(id, signal)
+        .then((data) => setTechnicalData(data))
+        .catch((err) => {
+          if (err?.name === "CanceledError") return;
+          setTechnicalError(
+            err?.response?.data?.detail || err?.message || "Failed to load technical indicators."
+          );
+        })
+        .finally(() => setTechnicalLoading(false));
     },
     []
   );
@@ -626,6 +766,28 @@ export default function StockDetailTab() {
         );
       })
       .finally(() => setFundamentalsLoading(false));
+  }, [selectedStockId]);
+
+  const retryTechnical = useCallback(() => {
+    if (!selectedStockId) return;
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const { signal } = controller;
+
+    setTechnicalData(null);
+    setTechnicalLoading(true);
+    setTechnicalError("");
+
+    fetchTechnicalIndicators(selectedStockId, signal)
+      .then((data) => setTechnicalData(data))
+      .catch((err) => {
+        if (err?.name === "CanceledError") return;
+        setTechnicalError(
+          err?.response?.data?.detail || err?.message || "Failed to load technical indicators."
+        );
+      })
+      .finally(() => setTechnicalLoading(false));
   }, [selectedStockId]);
 
   // ---------------------------------------------------------------------------
@@ -700,6 +862,14 @@ export default function StockDetailTab() {
               loading={fundamentalsLoading}
               error={fundamentalsError}
               onRetry={retryFundamentals}
+            />
+          </Col>
+          <Col span={24}>
+            <TechnicalSection
+              data={technicalData}
+              loading={technicalLoading}
+              error={technicalError}
+              onRetry={retryTechnical}
             />
           </Col>
         </Row>
