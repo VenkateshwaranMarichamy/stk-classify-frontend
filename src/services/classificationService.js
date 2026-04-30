@@ -102,3 +102,21 @@ export async function fetchIndustryTechnicalIndicators(basicIndCode, params = {}
   });
   return response.data;
 }
+
+const VALUATION_URL = "http://localhost:8000/api/fundamentals/valuation";
+
+export async function fetchPeerValuation(params, signal) {
+  const response = await axios.get(`${VALUATION_URL}/peers`, {
+    params,
+    signal
+  });
+  return response.data;
+}
+
+export async function fetchValuationYears(basicCode, signal) {
+  const response = await axios.get(`${VALUATION_URL}/years`, {
+    params: { basic_ind_code: basicCode },
+    signal
+  });
+  return response.data;
+}

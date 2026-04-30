@@ -7,8 +7,10 @@ import {
   fetchBasicIndustries,
   fetchIndustryTechnicalIndicators,
   fetchPeerFundamentals,
+  fetchPeerValuation,
   fetchPeerYears,
-  fetchStocksByBasicCode
+  fetchStocksByBasicCode,
+  fetchValuationYears
 } from "../services/classificationService";
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -24,6 +26,7 @@ const RISK_COLOR = { HIGH:"red", MEDIUM:"orange", LOW:"green" };
 
 const DEFAULT_FUND_COLUMNS = [
   "stock_name","financial_year","financial_date",
+  "_current_price","_trailing_pe","_dividend_yield","_market_cap",
   "total_revenue","net_income","ebitda","free_cash_flow",
   "diluted_eps","roe_pct","roce_pct","debt_to_equity_x","current_ratio_x"
 ];
@@ -38,6 +41,12 @@ const SORTABLE_FUND = new Set([
   "interest_coverage_x","current_ratio_x","quick_ratio_x","cash_flow_to_net_income_x",
   "free_cash_flow_margin_pct","capex_intensity_pct","cash_change"
 ]);
+
+const DEFAULT_VAL_COLUMNS = [
+  "stock", "current_price", "market_cap", "trailing_pe",
+  "forward_pe", "price_to_book", "book_value",
+  "dividend_yield", "return_on_equity", "debt_to_equity"
+];
 
 const DEFAULT_TECH_COLUMNS = [
   "stock_name","last_close","high_52w","low_52w",
@@ -201,8 +210,11 @@ function FundamentalsView({ basicIndustryCode, classMap, filters, onFiltersChang
   const [yearsError, setYearsError] = useState("");
   const [tableError, setTableError] = useState("");
 
+  // Valuation data — fetched once using default year, independent of year selector
+  const [valMap, setValMap] = useState(new Map()); // stock_id → valuation row
+
   useEffect(() => {
-    if (!basicIndustryCode) { setFinancialYearOptions([]); setFinancialYear(undefined); setRows([]); return; }
+    if (!basicIndustryCode) { setFinancialYearOptions([]); setFinancialYear(undefined); setRows([]); setValMap(new Map()); return; }
     const controller = new AbortController();
     setLoadingYears(true);
     fetchPeerYears(basicIndustryCode, controller.signal)
@@ -215,6 +227,41 @@ function FundamentalsView({ basicIndustryCode, classMap, filters, onFiltersChang
       })
       .catch((err) => { if (err?.name !== "CanceledError") setYearsError(err?.message || "Failed to load years."); })
       .finally(() => setLoadingYears(false));
+    return () => controller.abort();
+  }, [basicIndustryCode]);
+
+  // Fetch valuation data once using default year from valuation years API
+  useEffect(() => {
+    if (!basicIndustryCode) return;
+    const controller = new AbortController();
+
+    async function loadValuation() {
+      try {
+        const yResp = await fetchValuationYears(basicIndustryCode, controller.signal);
+        const defaultYear = yResp?.default_year
+          ? Number(yResp.default_year)
+          : Array.isArray(yResp?.years) && yResp.years.length > 0
+            ? Number(yResp.years[0])
+            : null;
+        if (!defaultYear) return;
+
+        const vResp = await fetchPeerValuation(
+          { basic_ind_code: basicIndustryCode, financial_year: defaultYear, sort_by: "market_cap", sort_dir: "desc" },
+          controller.signal
+        );
+
+        const map = new Map();
+        (Array.isArray(vResp?.rows) ? vResp.rows : []).forEach((r) => {
+          if (r.stock_id != null) map.set(Number(r.stock_id), r);
+        });
+        setValMap(map);
+      } catch (err) {
+        if (err?.name === "CanceledError") return;
+        // non-fatal — valuation columns just show "—"
+      }
+    }
+
+    loadValuation();
     return () => controller.abort();
   }, [basicIndustryCode]);
 
@@ -237,16 +284,37 @@ function FundamentalsView({ basicIndustryCode, classMap, filters, onFiltersChang
     return () => controller.abort();
   }, [basicIndustryCode, financialYear, pagination.current, pagination.pageSize, sortState.field, sortState.order]);
 
-  // Client-side filter using classMap
+  // Client-side filter using classMap, then merge valuation fields by stock_id
   const filteredRows = useMemo(
-    () => rows.filter((row) => applyClassFilter(row, "stock_name", classMap, filters)),
-    [rows, classMap, filters]
+    () => rows
+      .filter((row) => applyClassFilter(row, "stock_name", classMap, filters))
+      .map((row) => {
+        const val = valMap.get(Number(row.stock_id)) || {};
+        return {
+          ...row,
+          _current_price: val.current_price ?? null,
+          _trailing_pe: val.trailing_pe ?? null,
+          _dividend_yield: val.dividend_yield ?? null,
+          _market_cap: val.market_cap ?? null,
+        };
+      }),
+    [rows, classMap, filters, valMap]
   );
 
   const allColumns = useMemo(() => [
     { title:"Stock", dataIndex:"stock_name", key:"stock_name", sorter:true, fixed:"left", width:220, ellipsis:true, render:displayValue },
     { title:"Year", dataIndex:"financial_year", key:"financial_year", sorter:true, width:90, render:displayValue },
     { title:"Date", dataIndex:"financial_date", key:"financial_date", sorter:true, width:120, render:displayValue },
+    // Valuation columns (from default year, static)
+    { title:"Price", dataIndex:"_current_price", key:"_current_price", width:100, align:"right",
+      render:(v) => v != null ? Number(v).toFixed(2) : "—" },
+    { title:"Trailing PE", dataIndex:"_trailing_pe", key:"_trailing_pe", width:110, align:"right",
+      render:(v) => v != null ? Number(v).toFixed(2) : "—" },
+    { title:"Div Yield %", dataIndex:"_dividend_yield", key:"_dividend_yield", width:110, align:"right",
+      render:(v) => v != null ? `${Number(v).toFixed(2)}%` : "—" },
+    { title:"Mkt Cap (Cr)", dataIndex:"_market_cap", key:"_market_cap", width:120, align:"right",
+      render:(v) => v != null ? Number(v).toFixed(2) : "—" },
+    // Fundamentals columns
     numCol("Revenue","total_revenue",120), numCol("Net Income","net_income",120),
     numCol("EBITDA","ebitda",110), numCol("FCF","free_cash_flow",110),
     numCol("Diluted EPS","diluted_eps",110), numCol("Book Value","book_value_per_share",120),
@@ -439,6 +507,211 @@ function TechnicalView({ basicIndustryCode, classMap, filters, onFiltersChange }
 }
 
 // ---------------------------------------------------------------------------
+// Valuation sub-component
+// ---------------------------------------------------------------------------
+function ValuationView({ basicIndustryCode, classMap, filters, onFiltersChange }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 25, total: 0 });
+  const [sortState, setSortState] = useState({ field: "market_cap", order: "desc" });
+  const [financialYear, setFinancialYear] = useState(undefined);
+  const [yearOptions, setYearOptions] = useState([]);
+  const [loadingYears, setLoadingYears] = useState(false);
+  const [visibleValColumns, setVisibleValColumns] = useState(DEFAULT_VAL_COLUMNS);
+
+  // Fetch available years when industry changes
+  useEffect(() => {
+    if (!basicIndustryCode) { setYearOptions([]); setFinancialYear(undefined); setRows([]); return; }
+    const controller = new AbortController();
+    setLoadingYears(true);
+    fetchValuationYears(basicIndustryCode, controller.signal)
+      .then((response) => {
+        const years = Array.isArray(response?.years) ? response.years : [];
+        const options = years.map((y) => ({ label: String(y), value: Number(y) }));
+        setYearOptions(options);
+        // Auto-select default or most recent year
+        const defaultYear = response?.default_year ? Number(response.default_year) : options[0]?.value;
+        setFinancialYear(defaultYear);
+        setPagination((p) => ({ ...p, current: 1 }));
+      })
+      .catch((err) => { if (err?.name !== "CanceledError") setError(err?.message || "Failed to load years."); })
+      .finally(() => setLoadingYears(false));
+    return () => controller.abort();
+  }, [basicIndustryCode]);
+
+  // Fetch valuation data when year, pagination or sort changes
+  useEffect(() => {
+    if (!basicIndustryCode || !financialYear) return;
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+    fetchPeerValuation(
+      {
+        basic_ind_code: basicIndustryCode,
+        financial_year: financialYear,
+        page: pagination.current,
+        page_size: pagination.pageSize,
+        sort_by: sortState.field,
+        sort_dir: sortState.order
+      },
+      controller.signal
+    )
+      .then((response) => {
+        setRows(Array.isArray(response?.rows) ? response.rows : []);
+        setPagination((p) => ({ ...p, total: Number(response?.total) || 0 }));
+      })
+      .catch((err) => { if (err?.name !== "CanceledError") setError(err?.message || "Failed to load valuation data."); })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [basicIndustryCode, financialYear, pagination.current, pagination.pageSize, sortState.field, sortState.order]);
+
+  // Client-side filter using classMap (match by stock name)
+  const filteredRows = useMemo(
+    () => rows.filter((row) => applyClassFilter(row, "stock", classMap, filters)),
+    [rows, classMap, filters]
+  );
+
+  const hasFilter = filters.marketCap || filters.revenueSize || filters.techRisk || filters.fundRisk;
+  const cardTitle = hasFilter ? `Showing ${filteredRows.length} of ${rows.length} (page)` : undefined;
+
+  function fmt(val, decimals = 2) {
+    if (val === null || val === undefined) return "—";
+    const n = parseFloat(val);
+    if (isNaN(n)) return "—";
+    return n.toFixed(decimals);
+  }
+
+  function fmtPct(val) {
+    if (val === null || val === undefined) return "—";
+    const n = parseFloat(val);
+    if (isNaN(n)) return "—";
+    return `${(n * 100).toFixed(2)}%`;
+  }
+
+  const SORTABLE_VAL = new Set([
+    "stock","financial_year","current_price","market_cap","enterprise_value",
+    "trailing_pe","forward_pe","peg_ratio","price_to_sales","price_to_book",
+    "enterprise_to_revenue","enterprise_to_ebitda","trailing_eps","forward_eps",
+    "book_value","total_cash_per_share","current_ratio","quick_ratio","debt_to_equity",
+    "return_on_assets","return_on_equity","dividend_yield","payout_ratio",
+    "shares_outstanding","float_shares","held_percent_insiders","held_percent_institutions"
+  ]);
+
+  function valCol(title, key, width = 120, renderFn) {
+    return {
+      title, dataIndex: key, key, width, align: "right",
+      sorter: true,
+      render: renderFn || ((v) => fmt(v))
+    };
+  }
+
+  const allValColumns = [
+    { title: "Stock", dataIndex: "stock", key: "stock", fixed: "left", width: 180, ellipsis: true, sorter: true, render: (v) => v || "—" },
+    valCol("Price", "current_price", 110, (v) => fmt(v, 2)),
+    valCol("Market Cap (Cr)", "market_cap", 140, (v) => fmt(v, 2)),
+    valCol("EV (Cr)", "enterprise_value", 130, (v) => fmt(v, 2)),
+    valCol("Trailing PE", "trailing_pe", 110, (v) => fmt(v, 2)),
+    valCol("Forward PE", "forward_pe", 110, (v) => fmt(v, 2)),
+    valCol("PEG", "peg_ratio", 90, (v) => fmt(v, 2)),
+    valCol("P/S", "price_to_sales", 90, (v) => fmt(v, 2)),
+    valCol("P/B", "price_to_book", 90, (v) => fmt(v, 2)),
+    valCol("EV/Rev", "enterprise_to_revenue", 100, (v) => fmt(v, 2)),
+    valCol("EV/EBITDA", "enterprise_to_ebitda", 110, (v) => fmt(v, 2)),
+    valCol("Trailing EPS", "trailing_eps", 120, (v) => fmt(v, 2)),
+    valCol("Forward EPS", "forward_eps", 120, (v) => fmt(v, 2)),
+    valCol("Book Value", "book_value", 110, (v) => fmt(v, 2)),
+    valCol("Cash/Share", "total_cash_per_share", 110, (v) => fmt(v, 2)),
+    valCol("Current Ratio", "current_ratio", 120, (v) => fmt(v, 2)),
+    valCol("Quick Ratio", "quick_ratio", 110, (v) => fmt(v, 2)),
+    valCol("D/E", "debt_to_equity", 90, (v) => fmt(v, 2)),
+    valCol("ROA", "return_on_assets", 90, (v) => fmtPct(v)),
+    valCol("ROE", "return_on_equity", 90, (v) => fmtPct(v)),
+    valCol("Div Yield", "dividend_yield", 100, (v) => v != null ? `${fmt(v, 2)}%` : "—"),
+    valCol("Payout", "payout_ratio", 90, (v) => fmtPct(v)),
+    valCol("Shares (Cr)", "shares_outstanding", 110, (v) => fmt(v, 2)),
+    valCol("Float (Cr)", "float_shares", 100, (v) => fmt(v, 2)),
+    valCol("Insiders %", "held_percent_insiders", 110, (v) => fmtPct(v)),
+    valCol("Institutions %", "held_percent_institutions", 120, (v) => fmtPct(v)),
+  ];
+
+  const columns = allValColumns.filter((c) => visibleValColumns.includes(c.key));
+
+  function handleTableChange(nextPag, _f, sorter) {
+    const field = !Array.isArray(sorter) && sorter?.field && SORTABLE_VAL.has(sorter.field)
+      ? sorter.field : sortState.field;
+    const order = !Array.isArray(sorter) && sorter?.order
+      ? (sorter.order === "ascend" ? "asc" : "desc") : sortState.order;
+    setPagination((p) => ({ ...p, current: nextPag.current || 1, pageSize: nextPag.pageSize || 25 }));
+    setSortState({ field, order });
+  }
+
+  return (
+    <Space direction="vertical" size={12} style={{ width: "100%" }}>
+      {error && <Alert type="error" message={error} showIcon />}
+      <Row gutter={[12, 12]} align="middle">
+        <Col xs={24} md={10}>
+          <Select
+            placeholder="Select financial year"
+            value={financialYear}
+            onChange={(v) => { setFinancialYear(v); setPagination((p) => ({ ...p, current: 1 })); }}
+            loading={loadingYears}
+            disabled={!basicIndustryCode || yearOptions.length === 0}
+            options={yearOptions}
+            style={{ width: "100%" }}
+          />
+        </Col>
+      </Row>
+      <ClassificationFilterBar classMap={classMap} filterValues={filters} onChange={onFiltersChange} />
+      <Card title={cardTitle} styles={{ body: { padding: 0 } }}
+        extra={
+          <Popover
+            content={
+              <div style={{ padding: 12, width: 300, maxHeight: 440, overflowY: "auto", background: "#fff", borderRadius: 8 }}>
+                <Space direction="vertical" size={10} style={{ width: "100%" }}>
+                  <Checkbox.Group
+                    value={visibleValColumns}
+                    onChange={setVisibleValColumns}
+                    options={allValColumns.map((c) => ({ label: c.title, value: c.key }))}
+                    style={{ display: "grid", gridTemplateColumns: "1fr", gap: 6 }}
+                  />
+                  <Space>
+                    <Button size="small" onClick={() => setVisibleValColumns(DEFAULT_VAL_COLUMNS)}>Reset</Button>
+                    <Button size="small" onClick={() => setVisibleValColumns(allValColumns.map((c) => c.key))}>All</Button>
+                  </Space>
+                </Space>
+              </div>
+            }
+            title="Choose Columns" trigger="click" placement="bottomRight"
+            overlayInnerStyle={{ padding: 0, background: "#fff" }}
+          >
+            <Button size="small">Columns</Button>
+          </Popover>
+        }
+      >
+        <Table
+          rowKey="stock_id"
+          dataSource={filteredRows}
+          columns={columns}
+          loading={loading}
+          size="small"
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "25", "50", "100"]
+          }}
+          scroll={{ x: "max-content" }}
+          locale={{ emptyText: loading ? "Loading..." : "No valuation data available." }}
+        />
+      </Card>
+    </Space>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main PeerFundamentals export
 // ---------------------------------------------------------------------------
 export default function PeerFundamentals() {
@@ -522,7 +795,11 @@ export default function PeerFundamentals() {
               <Segmented
                 value={view}
                 onChange={setView}
-                options={[{ label:"Fundamentals", value:"fundamentals" }, { label:"Technical", value:"technical" }]}
+                options={[
+                  { label: "Fundamentals", value: "fundamentals" },
+                  { label: "Valuation", value: "valuation" },
+                  { label: "Technical", value: "technical" }
+                ]}
                 disabled={!basicIndustryCode}
               />
             </Col>
@@ -534,6 +811,15 @@ export default function PeerFundamentals() {
       {basicIndustryCode && view === "fundamentals" && (
         <FundamentalsView
           key={`fund-${basicIndustryCode}`}
+          basicIndustryCode={basicIndustryCode}
+          classMap={classMap}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+      )}
+      {basicIndustryCode && view === "valuation" && (
+        <ValuationView
+          key={`val-${basicIndustryCode}`}
           basicIndustryCode={basicIndustryCode}
           classMap={classMap}
           filters={filters}
