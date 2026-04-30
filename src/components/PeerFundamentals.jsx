@@ -200,7 +200,8 @@ function applyClassFilter(row, nameKey, classMap, filters) {
 // ---------------------------------------------------------------------------
 function FundamentalsView({ basicIndustryCode, classMap, filters, onFiltersChange }) {
   const [financialYearOptions, setFinancialYearOptions] = useState([]);
-  const [financialYear, setFinancialYear] = useState(undefined);
+  // selectedPeriod: { financial_year: number, period_type: string } | undefined
+  const [selectedPeriod, setSelectedPeriod] = useState(undefined);
   const [rows, setRows] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState(DEFAULT_FUND_COLUMNS);
   const [pagination, setPagination] = useState({ current: 1, pageSize: DEFAULT_PAGE_SIZE, total: 0 });
@@ -214,15 +215,29 @@ function FundamentalsView({ basicIndustryCode, classMap, filters, onFiltersChang
   const [valMap, setValMap] = useState(new Map()); // stock_id → valuation row
 
   useEffect(() => {
-    if (!basicIndustryCode) { setFinancialYearOptions([]); setFinancialYear(undefined); setRows([]); setValMap(new Map()); return; }
+    if (!basicIndustryCode) { setFinancialYearOptions([]); setSelectedPeriod(undefined); setRows([]); setValMap(new Map()); return; }
     const controller = new AbortController();
     setLoadingYears(true);
     fetchPeerYears(basicIndustryCode, controller.signal)
       .then((response) => {
         const years = Array.isArray(response?.years) ? response.years : [];
-        const options = years.map((y) => ({ label: String(y), value: Number(y) }));
+        // Each year is now { financial_year, period_type }
+        const options = years.map((y) => {
+          const yr = y?.financial_year ?? y;
+          const pt = y?.period_type ?? "annual";
+          const key = `${yr}|${pt}`;
+          const label = pt === "ttm"
+            ? `${yr} — TTM`
+            : String(yr);
+          return { label, value: key, financial_year: Number(yr), period_type: pt };
+        });
         setFinancialYearOptions(options);
-        setFinancialYear(response?.default_year ? Number(response.default_year) : options[0]?.value);
+        // Auto-select default
+        const defaultYr = response?.default_year ? Number(response.default_year) : options[0]?.financial_year;
+        const defaultPt = response?.default_period_type ?? "annual";
+        const defaultKey = `${defaultYr}|${defaultPt}`;
+        const defaultOpt = options.find((o) => o.value === defaultKey) || options[0];
+        setSelectedPeriod(defaultOpt ? { financial_year: defaultOpt.financial_year, period_type: defaultOpt.period_type } : undefined);
         setPagination((p) => ({ ...p, current: 1 }));
       })
       .catch((err) => { if (err?.name !== "CanceledError") setYearsError(err?.message || "Failed to load years."); })
@@ -266,11 +281,14 @@ function FundamentalsView({ basicIndustryCode, classMap, filters, onFiltersChang
   }, [basicIndustryCode]);
 
   useEffect(() => {
-    if (!basicIndustryCode || !financialYear) return;
+    if (!basicIndustryCode || !selectedPeriod) return;
     const controller = new AbortController();
     setLoadingTable(true);
+    setTableError("");
     fetchPeerFundamentals(
-      { basic_ind_code: basicIndustryCode, financial_year: financialYear,
+      { basic_ind_code: basicIndustryCode,
+        financial_year: selectedPeriod.financial_year,
+        period_type: selectedPeriod.period_type,
         page: pagination.current, page_size: pagination.pageSize,
         sort_by: sortState.field, sort_dir: sortState.order },
       controller.signal
@@ -282,7 +300,7 @@ function FundamentalsView({ basicIndustryCode, classMap, filters, onFiltersChang
       .catch((err) => { if (err?.name !== "CanceledError") setTableError(err?.message || "Failed to load fundamentals."); })
       .finally(() => setLoadingTable(false));
     return () => controller.abort();
-  }, [basicIndustryCode, financialYear, pagination.current, pagination.pageSize, sortState.field, sortState.order]);
+  }, [basicIndustryCode, selectedPeriod, pagination.current, pagination.pageSize, sortState.field, sortState.order]);
 
   // Client-side filter using classMap, then merge valuation fields by stock_id
   const filteredRows = useMemo(
@@ -352,13 +370,19 @@ function FundamentalsView({ basicIndustryCode, classMap, filters, onFiltersChang
       <Row gutter={[12,12]} align="middle">
         <Col xs={24} md={10}>
           <Select
-            placeholder="Select financial year"
-            value={financialYear}
-            onChange={(v) => { setFinancialYear(v); setPagination((p) => ({ ...p, current:1 })); }}
+            placeholder="Select period"
+            value={selectedPeriod ? `${selectedPeriod.financial_year}|${selectedPeriod.period_type}` : undefined}
+            onChange={(key) => {
+              const opt = financialYearOptions.find((o) => o.value === key);
+              if (opt) {
+                setSelectedPeriod({ financial_year: opt.financial_year, period_type: opt.period_type });
+                setPagination((p) => ({ ...p, current: 1 }));
+              }
+            }}
             loading={loadingYears}
             disabled={!basicIndustryCode || financialYearOptions.length === 0}
             options={financialYearOptions}
-            style={{ width:"100%" }}
+            style={{ width: "100%" }}
           />
         </Col>
       </Row>
