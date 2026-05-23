@@ -123,12 +123,15 @@ Three views toggled by a Segmented control:
 ### Fundamentals View
 
 **On industry selection:**
-- `GET /api/fundamentals/peer-years?basic_ind_code={code}` → year selector, auto-selects default year
+- `GET /api/fundamentals/peer-years?basic_ind_code={code}` → period selector (year + period_type combined)
+  - Response: `{ years: [{ financial_year, period_type }], default_year, default_period_type }`
+  - Options shown as: `"2026 — TTM"`, `"2026"`, `"2025"`, etc.
+  - Composite key `"2026|ttm"` used internally to uniquely identify each option
 - `GET /api/fundamentals/valuation/years?basic_ind_code={code}` → gets valuation default year
 - `GET /api/fundamentals/valuation/peers?basic_ind_code={code}&financial_year={defaultValYear}&sort_by=market_cap&sort_dir=desc` → loads ALL valuation rows (no pagination), builds `valMap: Number(stock_id) → valuation row`
 
-**On year change (fundamentals only):**
-- `GET /api/fundamentals/peers?basic_ind_code={code}&financial_year={year}&page=...&sort_by=...` → server-side pagination + sorting
+**On period change (fundamentals only):**
+- `GET /api/fundamentals/peers?basic_ind_code={code}&financial_year={year}&period_type={annual|ttm}&page=...&sort_by=...` → server-side pagination + sorting
 - Valuation data does NOT re-fetch — it stays fixed at the default valuation year
 
 **Merged columns in table:**
